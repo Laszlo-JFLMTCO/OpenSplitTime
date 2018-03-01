@@ -57,6 +57,10 @@ class EventGroupsController < ApplicationController
     end
   end
 
+  def stage
+    authorize @event_group
+  end
+
   private
 
   def set_event_group

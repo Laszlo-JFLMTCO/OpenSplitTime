@@ -22,6 +22,10 @@ class EventGroupPolicy < ApplicationPolicy
     user.authorized_to_edit?(event_group)
   end
 
+  def stage?
+    user.present?
+  end
+
   def post_event_course_org?
     user.authorized_to_edit?(event_group)
   end

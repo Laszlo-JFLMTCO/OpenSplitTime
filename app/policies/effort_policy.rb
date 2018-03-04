@@ -5,7 +5,7 @@ class EffortPolicy < ApplicationPolicy
 
     def delegated_records
       if user
-        scope.includes(event: {event_group: {organization: :stewardships}}).delegated(user.id)
+        scope.joins(event: {event_group: {organization: :stewardships}}).delegated(user.id)
       else
         scope.none
       end

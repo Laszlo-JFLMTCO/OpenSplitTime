@@ -35,8 +35,8 @@ class Event < ApplicationRecord
         .left_joins(:efforts).left_joins(:event_group)
         .group('events.id, event_groups.id')
   end
-  scope :concealed, -> { includes(:event_group).where(event_groups: {concealed: true}) }
-  scope :visible, -> { includes(:event_group).where(event_groups: {concealed: false}) }
+  scope :concealed, -> { joins(:event_group).where(event_groups: {concealed: true}) }
+  scope :visible, -> { joins(:event_group).where(event_groups: {concealed: false}) }
   scope :standard_includes, -> { includes(:splits, :efforts, :event_group) }
 
   def self.search(search_param)

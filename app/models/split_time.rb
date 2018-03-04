@@ -30,7 +30,7 @@ class SplitTime < ApplicationRecord
   scope :in, -> { where(sub_split_bitkey: SubSplit::IN_BITKEY) }
   scope :within_time_range, -> (low_time, high_time) { where(time_from_start: low_time..high_time) }
   scope :from_finished_efforts, -> { joins(effort: {split_times: :split}).where(splits: {kind: 1}) }
-  scope :visible, -> { includes(effort: {event: :event_group}).where('event_groups.concealed = ?', 'f') }
+  scope :visible, -> { joins(effort: {event: :event_group}).where(event_groups: {concealed: false}) }
   scope :at_time_point, -> (time_point) { where(lap: time_point.lap, split_id: time_point.split_id, bitkey: time_point.bitkey) }
   scope :with_live_time_matchers, -> { joins(effort: :event).select("split_times.*, (events.start_time + efforts.start_offset * interval '1 second' + time_from_start * interval '1 second') as day_and_time, events.home_time_zone as event_home_zone, efforts.bib_number as bib_number")}
 

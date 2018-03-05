@@ -8,6 +8,31 @@ class Api::V1::EventGroupsController < ApiController
     render json: event_group, include: prepared_params[:include], fields: prepared_params[:fields]
   end
 
+  # Creates the given event_group and creates or updates relationships
+  # all in a single transaction.
+
+  # POST /api/v1/event_groups
+  def create
+    event_group = EventGroup.new
+    event_relationships = params.dig(:data, :relationships, :events, :data) || []
+    events = event_relationships.map { |relationship| Event.find_or_initialize_by(id: relationship[:id]) }
+    courses = events.map { |event| event.course || Course.new }
+    organization = Organization.find_or_initialize_by(id: params.dig(:data, :relationships, :organization, :data, :id))
+
+    persisted_resources = [event_group, events, courses, organization].flatten.select(&:persisted?)
+    skip_authorization if persisted_resources.empty?
+    persisted_resources.each { |resource| authorize resource }
+
+    response = Interactors::PersistEventGroup.perform!(event_group, events: events, courses: courses, organization: organization, params: params)
+
+    if response.successful?
+      event_group.reload
+      render json: event_group, include: 'events.course, organization', status: :created
+    else
+      render json: {errors: response.resources.map { |resource| jsonapi_error_object(resource) if resource.errors.present? }}, status: :unprocessable_entity
+    end
+  end
+
   def pull_live_time_rows
 
     # This endpoint searches for un-pulled live_times belonging to the event_group, selects a batch,
@@ -47,5 +72,26 @@ class Api::V1::EventGroupsController < ApiController
     authorize @resource
     report_live_times_available(@resource)
     render json: {message: "Live times push notification sent for #{@resource.name}"}
+  end
+
+  private
+
+  def authorize_param_resources
+    primary_type_id = (params[:data] || {}).slice(:type, :id)
+    included_type_ids = (params[:included] || []).map { |include| include.slice(:id, :type) }
+
+    (Array.wrap(primary_type_id) + included_type_ids).each do |type_id|
+      type_id[:id] ? authorize_persisted_resource(type_id) : authorize_new_resource(type_id)
+    end
+    skip_authorization # Keeps Pundit from raising error if no resources are available
+  end
+
+  def authorize_persisted_resource(type_id)
+    persisted_included_resource = type_id[:type].classify.constantize.find(type_id[:id])
+    authorize persisted_included_resource if persisted_included_resource
+  end
+
+  def authorize_new_resource(type_id)
+    authorize type_id[:type].classify.constantize
   end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Interactors
   class UpdateEffortsStop
     include Interactors::Errors
@@ -23,7 +25,7 @@ module Interactors
     attr_reader :efforts, :stop_status, :errors
 
     def changed_split_times
-      @changed_split_times ||= stop_responses.map(&:resources).flatten
+      @changed_split_times ||= stop_responses.flat_map(&:resources)
     end
 
     def stop_responses

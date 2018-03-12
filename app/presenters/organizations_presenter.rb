@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class OrganizationsPresenter < BasePresenter
   attr_reader :organizations
 
@@ -16,7 +18,7 @@ class OrganizationsPresenter < BasePresenter
   attr_reader :params, :current_user
 
   def events(organization)
-    grouped_event_groups[organization.id]&.map(&:events)&.flatten || []
+    grouped_event_groups[organization.id]&.flat_map(&:events) || []
   end
 
   def grouped_event_groups

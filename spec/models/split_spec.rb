@@ -12,6 +12,7 @@ require 'rails_helper'
 RSpec.describe Split, kind: :model do
   it_behaves_like 'unit_conversions'
   it_behaves_like 'auditable'
+  it_behaves_like 'locatable'
   it { is_expected.to strip_attribute(:base_name).collapse_spaces }
   it { is_expected.to strip_attribute(:description).collapse_spaces }
 
@@ -62,6 +63,30 @@ RSpec.describe Split, kind: :model do
     it 'does not allow duplicate names within the same course' do
       split_1 = create(:split, course: persisted_course)
       split_2 = build_stubbed(:split, course: persisted_course, base_name: split_1.base_name)
+      expect(split_2).not_to be_valid
+      expect(split_2.errors[:base_name]).to include('must be unique for a course')
+    end
+
+    it 'ignores case when validating uniqueness of names within the same course' do
+      split_1 = create(:split, course: persisted_course)
+      split_2 = build_stubbed(:split, course: persisted_course, base_name: split_1.base_name.upcase)
+      expect(split_1.base_name).not_to eq(split_2.base_name)
+      expect(split_2).not_to be_valid
+      expect(split_2.errors[:base_name]).to include('must be unique for a course')
+    end
+
+    it 'ignores dash separators when validating uniqueness of names within the same course' do
+      split_1 = create(:split, course: persisted_course)
+      split_2 = build_stubbed(:split, course: persisted_course, base_name: split_1.base_name.split.join('-'))
+      expect(split_1.base_name).not_to eq(split_2.base_name)
+      expect(split_2).not_to be_valid
+      expect(split_2.errors[:base_name]).to include('must be unique for a course')
+    end
+
+    it 'ignores extra spaces when validating uniqueness of names within the same course' do
+      split_1 = create(:split, course: persisted_course)
+      split_2 = build_stubbed(:split, course: persisted_course, base_name: split_1.base_name.split.join('  '))
+      expect(split_1.base_name).not_to eq(split_2.base_name)
       expect(split_2).not_to be_valid
       expect(split_2.errors[:base_name]).to include('must be unique for a course')
     end
@@ -160,6 +185,54 @@ RSpec.describe Split, kind: :model do
       split.longitude = -181
       expect(split).not_to be_valid
       expect(split.errors[:longitude]).to include('must be between -180 and 180')
+    end
+
+    context 'for event_group split location validations' do
+      let(:event_1) { create(:event, course: course_1, event_group: event_group) }
+      let(:event_2) { create(:event, course: course_2, event_group: event_group) }
+      let(:event_group) { create(:event_group) }
+      let(:course_1) { create(:course) }
+      let(:course_1_split_1) { create(:start_split, course: course_1, base_name: 'Start', latitude: 40, longitude: -105) }
+      let(:course_1_split_2) { create(:finish_split, course: course_1, base_name: 'Finish', latitude: 42, longitude: -107) }
+      let(:course_2) { create(:course) }
+      let(:course_2_split_1) { create(:start_split, course: course_2, base_name: 'Start', latitude: 40, longitude: -105) }
+      let(:course_2_split_2) { create(:finish_split, course: course_2, base_name: 'Finish', latitude: 42, longitude: -107) }
+      before do
+        event_1.splits << course_1_split_1
+        event_1.splits << course_1_split_2
+        event_2.splits << course_2_split_1
+        event_2.splits << course_2_split_2
+      end
+
+      context 'when split names are duplicated with matching locations within the same event_group' do
+        it 'is valid' do
+          expect(course_1_split_2).to be_valid
+          course_1_split_2.update(base_name: 'Finish')
+          expect(course_1_split_2).to be_valid
+        end
+      end
+
+      context 'when split name changes to match a split with a non-matching location within the same event_group' do
+        let(:course_1_split_2) { create(:finish_split, course: course_1, base_name: 'Alternate Finish', latitude: 41, longitude: -106) }
+
+        it 'is invalid' do
+          expect(course_1_split_2).to be_valid
+          course_1_split_2.update(base_name: 'Finish')
+          expect(course_1_split_2).not_to be_valid
+          expect(course_1_split_2.errors.full_messages).to include(/Base name Finish is incompatible with similarly named splits within event group/)
+        end
+      end
+
+      context 'when split location changes to move away from a split with a matching name within the same event_group' do
+        let(:course_1_split_2) { create(:finish_split, course: course_1, base_name: 'Finish', latitude: 42, longitude: -107) }
+
+        it 'is invalid' do
+          expect(course_1_split_2).to be_valid
+          course_1_split_2.update(latitude: 41)
+          expect(course_1_split_2).not_to be_valid
+          expect(course_1_split_2.errors.full_messages).to include(/Base name Finish is incompatible with similarly named splits within event group/)
+        end
+      end
     end
   end
 
@@ -393,6 +466,14 @@ RSpec.describe Split, kind: :model do
           expect(split.live_entry_attributes).to eq(expected)
         end
       end
+    end
+  end
+
+  describe '#parameterized_base_name' do
+    let(:split) { build_stubbed(:split, base_name: 'Aid Station 1') }
+
+    it 'returns a parameterized version of the base_name' do
+      expect(split.parameterized_base_name).to eq('aid-station-1')
     end
   end
 end

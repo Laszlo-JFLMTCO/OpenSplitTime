@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 module Results
   class SeriesEffort
     delegate :full_name, :to_param, to: :person
     delegate :bio_historic, :flexible_geolocation, to: :effort
 
-        def initialize(args)
+    def initialize(args)
       @person = args[:person]
       @efforts = args[:efforts]
     end

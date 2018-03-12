@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Organization < ApplicationRecord
 
   include Auditable
@@ -23,7 +25,7 @@ class Organization < ApplicationRecord
 
   def events
     if event_groups.loaded? && event_groups.all? { |eg| eg.events.loaded? }
-      event_groups.map(&:events).flatten
+      event_groups.flat_map(&:events)
     else
       Event.where(event_group_id: event_groups.ids)
     end

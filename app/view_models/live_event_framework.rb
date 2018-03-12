@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class LiveEventFramework
   attr_reader :event
   delegate :multiple_laps?, :home_time_zone, :ordered_events_within_group, to: :event
@@ -101,7 +103,7 @@ class LiveEventFramework
   end
 
   def time_points
-    @time_points ||= lap_splits.map(&:time_points).flatten
+    @time_points ||= lap_splits.flat_map(&:time_points)
   end
 
   def ordered_splits

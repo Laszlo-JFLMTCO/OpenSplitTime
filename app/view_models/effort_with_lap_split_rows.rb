@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class EffortWithLapSplitRows
 
   attr_reader :effort
@@ -63,7 +65,7 @@ class EffortWithLapSplitRows
   end
 
   def time_points
-    @time_points ||= lap_splits.map(&:time_points).flatten
+    @time_points ||= lap_splits.flat_map(&:time_points)
   end
 
   def lap_splits

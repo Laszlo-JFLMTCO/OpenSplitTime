@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class PlaceDetailView
 
   attr_reader :effort, :place_detail_rows
@@ -105,7 +107,7 @@ class PlaceDetailView
   end
 
   def frequent_encountered_ids
-    place_detail_rows.map(&:encountered_ids).flatten.compact
+    place_detail_rows.flat_map(&:encountered_ids).compact
         .count_each.sort_by { |_, count| -count }.first(5).map(&:first)
   end
 

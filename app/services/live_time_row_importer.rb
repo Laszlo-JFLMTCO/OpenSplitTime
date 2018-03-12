@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class LiveTimeRowImporter
   attr_reader :errors
 
@@ -137,8 +139,8 @@ class LiveTimeRowImporter
   def validate_time_rows
     split_ids = time_rows.map { |row| row[:split_id].presence }.compact.uniq
     effort_ids = time_rows.map { |row| row[:effort_id].presence }.compact.uniq
-    live_time_ids = time_rows.map { |row| [row[:live_time_id_in].presence, row[:live_time_id_out].presence] }
-                        .flatten.compact.uniq
+    live_time_ids = time_rows.flat_map { |row| [row[:live_time_id_in].presence, row[:live_time_id_out].presence] }
+                        .compact.uniq
     begin
       Split.find(split_ids)
     rescue ActiveRecord::RecordNotFound

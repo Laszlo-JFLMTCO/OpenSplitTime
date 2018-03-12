@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Interactors
   class CreateSplitTimesFromLiveTimes
     include Interactors::Errors
@@ -59,7 +61,7 @@ module Interactors
     end
 
     def creatable_split_times
-      creatable_effort_data_objects.map(&:proposed_split_times).flatten.select(&:time_from_start)
+      creatable_effort_data_objects.flat_map(&:proposed_split_times).select(&:time_from_start)
     end
 
     def creatable_effort_data_objects

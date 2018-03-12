@@ -25,6 +25,7 @@ class Event < ApplicationRecord
   validates_uniqueness_of :name, case_sensitive: false
   validate :home_time_zone_exists
   validate :course_is_consistent
+  validates_with GroupedEventValidator
 
   after_destroy :destroy_orphaned_event_group
 
@@ -157,7 +158,7 @@ class Event < ApplicationRecord
   end
 
   def pick_partner_with_banner
-    partners.with_banners.map { |partner| [partner] * partner.weight }.flatten.shuffle.first
+    partners.with_banners.flat_map { |partner| [partner] * partner.weight }.shuffle.first
   end
 
   def live_entry_attributes

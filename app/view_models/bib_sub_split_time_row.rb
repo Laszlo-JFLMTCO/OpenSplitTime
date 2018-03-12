@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class BibSubSplitTimeRow
   DISCREPANCY_THRESHOLD = 5.minutes
   attr_reader :bib_number, :effort
@@ -31,7 +33,7 @@ class BibSubSplitTimeRow
   end
 
   def largest_discrepancy
-    times_in_seconds = joined_military_times.map { |military_time| Time.parse(military_time).seconds_since_midnight }.sort
+    times_in_seconds = joined_military_times.map { |military_time| ActiveSupport::TimeZone[time_zone].parse(military_time).seconds_since_midnight }.sort
     adjusted_times = times_in_seconds.map { |seconds| (seconds - times_in_seconds.first) > 12.hours ? (seconds - 24.hours).to_i : seconds }.sort
     (adjusted_times.last - adjusted_times.first).to_i
   end

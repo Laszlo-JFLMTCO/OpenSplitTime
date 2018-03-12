@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class LiveEffortData
   attr_reader :ordered_splits, :effort, :new_split_times, :indexed_existing_split_times
   delegate :person_id, to: :effort
@@ -160,7 +162,7 @@ class LiveEffortData
   end
 
   def effort_time_points
-    @effort_time_points ||= effort_lap_splits.map(&:time_points).flatten
+    @effort_time_points ||= effort_lap_splits.flat_map(&:time_points)
   end
 
   # Temporarily change good split_times to confirmed; this optimizes #create_split_times

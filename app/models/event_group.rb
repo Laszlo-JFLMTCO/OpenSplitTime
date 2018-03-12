@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class EventGroup < ApplicationRecord
+  enum data_entry_grouping_strategy: [:ungrouped, :location_grouped]
+
   include Auditable
   include Concealable
   include Delegable
@@ -24,7 +26,7 @@ class EventGroup < ApplicationRecord
   end
 
   def effort_count
-    events.map(&:efforts).flatten.size
+    events.flat_map(&:efforts).size
   end
 
   def to_s

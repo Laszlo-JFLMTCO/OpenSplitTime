@@ -1,6 +1,10 @@
+# frozen_string_literal: true
+
 class Split < ApplicationRecord
+  DISTANCE_THRESHOLD = 100 # Distance (in meters) below which split locations are deemed equivalent
 
   include Auditable
+  include Locatable
   include GuaranteedFindable
   include UnitConversions
   extend FriendlyId
@@ -15,8 +19,6 @@ class Split < ApplicationRecord
 
   validates_presence_of :base_name, :distance_from_start, :sub_split_bitmap, :kind
   validates :kind, inclusion: {in: Split.kinds.keys}
-  validates_uniqueness_of :base_name, scope: :course_id, case_sensitive: false,
-                          message: 'must be unique for a course'
   validates_uniqueness_of :kind, scope: :course_id, if: :start?,
                           message: 'only one start split permitted on a course'
   validates_uniqueness_of :kind, scope: :course_id, if: :finish?,
@@ -89,6 +91,10 @@ class Split < ApplicationRecord
 
   def should_generate_new_friendly_id?
     slug.blank? || base_name_changed? || course&.name_changed?
+  end
+
+  def parameterized_base_name
+    base_name.parameterize
   end
 
   def name(bitkey = nil)
